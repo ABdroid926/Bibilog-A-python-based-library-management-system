@@ -3,12 +3,10 @@ import pandas as pd
 import requests
 import json
 
-st.set_page_config(page_title="Library Portal", page_icon="📚", layout="centered")
-st.title("📚 Community Library Portal")
+st.set_page_config(page_title="Bibilog", page_icon="📚", layout="centered")
+st.title("📚 Bibilog Library Portal")
 
-# =====================================================================
-# 1. SECURE DATA FETCHING
-# =====================================================================
+
 try:
     SHEET_URL = st.secrets["sheet_url"]
     SCRIPT_URL = st.secrets["script_url"]
@@ -20,15 +18,15 @@ except Exception as e:
     st.error("Security/Database configuration error. Check your Streamlit Secrets Dashboard.")
     st.stop()
 
-# Initialize session states
+
 if "user_role" not in st.session_state:
     st.session_state.user_role = None
 if "username" not in st.session_state:
     st.session_state.username = None
 
-# --- LOGIN INTERFACE ---
+
 if st.session_state.user_role is None:
-    st.subheader("🔑 Member & Admin Login")
+    st.subheader("🔑 Login")
     
     username_input = st.text_input("Username").lower().strip()
     password_input = st.text_input("Password", type="password")
@@ -78,21 +76,30 @@ else:
                     st.caption(f"Due: {row['due_date']}")
                 
                 with col3:
+                    # BUTTON 1: REQUEST RETURN
                     if status != "Return Requested":
-                        if st.button("🚨 Request Return", key=f"req_{row['id']}", use_container_width=True):
-                            payload = {"id": int(row['id']), "status": "Return Requested"}
+                        if st.button("🚨 Request", key=f"req_{row['id']}", use_container_width=True):
+                            payload = {"id": int(row['id']), "action": "request"}
                             try:
-                                # Send update to Google Apps Script
                                 response = requests.post(SCRIPT_URL, data=json.dumps(payload))
                                 if response.status_code == 200:
-                                    st.toast("Notification updated live!")
+                                    st.toast("Return requested!")
                                     st.rerun()
-                                else:
-                                    st.error("Sheet rejected the update.")
-                            except Exception as e:
+                            except:
                                 st.error("Connection failed.")
                     else:
                         st.button("Alert Live!", key=f"pend_{row['id']}", disabled=True, use_container_width=True)
+                    
+                   
+                    if st.button("↩️ Return", key=f"ret_{row['id']}", use_container_width=True):
+                        payload = {"id": int(row['id']), "action": "return"}
+                        try:
+                            response = requests.post(SCRIPT_URL, data=json.dumps(payload))
+                            if response.status_code == 200:
+                                st.toast("Book checked back in!")
+                                st.rerun()
+                        except:
+                            st.error("Connection failed.")
         else:
             st.info("🎉 All clear! No books are currently checked out.")
 
