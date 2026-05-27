@@ -62,47 +62,55 @@ else:
     if st.session_state.user_role == "admin":
         st.header("🛡️ Admin Dashboard")
         
-        # --- FEATURE: CHECKOUT FORM ---
+        # --- FEATURE: CHECKOUT FORM WITH TEXT ENTRY ---
         st.subheader("📥 Issue & Checkout Desk")
         
-        # Find books that are currently available
-        available_books = df[df["status"] == "Available"]
-        
-        if not available_books.empty:
-            with st.form("checkout_form", clear_on_submit=True):
-                # Create dropdown option text: "Book Title (ID: 1)"
-                book_options = available_books.apply(lambda row: f"{row['title']} (ID: {row['id']})", axis=1).tolist()
-                selected_book_string = st.selectbox("Select Available Book", book_options)
-                
-                # Input student name
-                borrower_name = st.text_input("Student Username (e.g., alice, bob)").lower().strip()
-                
-                # Set return date picker (defaults to 14 days from today)
-                due_date_picker = st.date_input("Return Due Date", datetime.now() + timedelta(days=14))
-                
-                submit_checkout = st.form_submit_form_button = st.form_submit_button("🚀 Issue Book", use_container_width=True)
-                
-                if submit_checkout:
-                    if borrower_name:
-                        # Extract the numeric ID out of our bracket string
-                        selected_id = int(selected_book_string.split("(ID: ")[1].replace(")", ""))
+        with st.form("checkout_form", clear_on_submit=True):
+            # Admin types ID number or book title
+            book_search = st.text_input("Enter Book ID or Title").strip()
+            
+            # Input student name
+            borrower_name = st.text_input("Student Username (e.g., alice, bob)").lower().strip()
+            
+            # Input loan duration period in days
+            loan_days = st.number_input("Loan Period (Days)", min_value=1, max_value=90, value=14, step=1)
+            
+            submit_checkout = st.form_submit_button("🚀 Issue Book", use_container_width=True)
+            
+            if submit_checkout:
+                if not book_search or not borrower_name:
+                    st.error("Please fill out both the Book search field and Student Username field.")
+                else:
+                    # Search logic: check if entry matches an ID number or part of a title
+                    matched_book = pd.DataFrame()
+                    
+                    if book_search.isdigit():
+                        matched_book = df[df["id"].astype(str) == book_search]
+                    else:
+                        matched_book = df[df["title"].astype(str).str.lower().str.contains(book_search.lower())]
+                    
+                    # Validate match outcomes
+                    if matched_book.empty:
+                        st.error(f"Could not find any book matching '{book_search}'.")
+                    elif matched_book.iloc[0]["status"] != "Available":
+                        st.error(f"❌ '{matched_book.iloc[0]['title']}' is already checked out to {str(matched_book.iloc[0]['borrowed_by']).capitalize()}!")
+                    else:
+                        # Success match found
+                        target_row = matched_book.iloc[0]
+                        calculated_due_date = datetime.now() + timedelta(days=int(loan_days))
                         
                         payload = {
-                            "id": selected_id,
+                            "id": int(target_row["id"]),
                             "action": "checkout",
                             "borrowed_by": borrower_name,
-                            "due_date": due_date_picker.strftime("%Y-%m-%d")
+                            "due_date": calculated_due_date.strftime("%Y-%m-%d")
                         }
                         try:
                             response = requests.post(SCRIPT_URL, data=json.dumps(payload), timeout=10)
-                            st.toast("Book assigned successfully!")
+                            st.toast(f"Success! Checked out '{target_row['title']}' to {borrower_name.capitalize()}.")
                             st.rerun()
                         except:
                             st.rerun()
-                    else:
-                        st.error("Please provide a valid student username.")
-        else:
-            st.success("📚 All books are currently checked out!")
             
         st.markdown("---")
 
@@ -115,7 +123,7 @@ else:
                 col1, col2, col3 = st.columns([3, 2, 2])
                 
                 with col1:
-                    st.write(f"📖 **{row['title']}**")
+                    st.write(f"📖 **{row['title']}** (ID: {row['id']})")
                     st.caption(f"Borrowed by: {str(row['borrowed_by']).capitalize()}")
                 
                 with col2:
@@ -127,6 +135,7 @@ else:
                     st.caption(f"Due: {row['due_date']}")
                 
                 with col3:
+                    # BUTTON 1: REQUEST RETURN
                     if status != "Return Requested":
                         if st.button("🚨 Request", key=f"req_{row['id']}", use_container_width=True):
                             payload = {"id": int(row['id']), "action": "request"}
