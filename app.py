@@ -48,7 +48,7 @@ if st.session_state.user_role is None:
         
         if st.button("Log In", use_container_width=True):
             # 1. Hardcoded Admin Access
-            if username_input == "admin" and password_input == "admin123":
+            if username_input == st.secrets["admin"] and password_input == st.secrets["admin_pass"]:
                 st.session_state.user_role = "admin"
                 st.session_state.username = "admin"
                 st.rerun()
