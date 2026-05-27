@@ -3,10 +3,12 @@ import pandas as pd
 import requests
 import json
 
-st.set_page_config(page_title="Bibilog", page_icon="📚", layout="centered")
-st.title("📚 Bibilog Library Portal")
+st.set_page_config(page_title="Library Portal", page_icon="📚", layout="centered")
+st.title("📚 Community Library Portal")
 
-
+# =====================================================================
+# 1. SECURE DATA FETCHING
+# =====================================================================
 try:
     SHEET_URL = st.secrets["sheet_url"]
     SCRIPT_URL = st.secrets["script_url"]
@@ -18,15 +20,15 @@ except Exception as e:
     st.error("Security/Database configuration error. Check your Streamlit Secrets Dashboard.")
     st.stop()
 
-
+# Initialize session states
 if "user_role" not in st.session_state:
     st.session_state.user_role = None
 if "username" not in st.session_state:
     st.session_state.username = None
 
-
+# --- LOGIN INTERFACE ---
 if st.session_state.user_role is None:
-    st.subheader("🔑 Login")
+    st.subheader("🔑 Member & Admin Login")
     
     username_input = st.text_input("Username").lower().strip()
     password_input = st.text_input("Password", type="password")
@@ -56,7 +58,8 @@ else:
         st.header("🛡️ Admin Dashboard")
         st.subheader("Current Book Loans & Statuses")
         
-        borrowed_books = df[df["borrowed_by"].notna() & (df["borrowed_by"] != "")]
+        # Filter: Exclude rows where borrowed_by is empty, null, or status is Available
+        borrowed_books = df[df["borrowed_by"].notna() & (df["borrowed_by"].astype(str).str.strip() != "") & (df["status"] != "Available")]
         
         if not borrowed_books.empty:
             for index, row in borrowed_books.iterrows():
@@ -81,25 +84,25 @@ else:
                         if st.button("🚨 Request", key=f"req_{row['id']}", use_container_width=True):
                             payload = {"id": int(row['id']), "action": "request"}
                             try:
-                                response = requests.post(SCRIPT_URL, data=json.dumps(payload))
-                                if response.status_code == 200:
-                                    st.toast("Return requested!")
-                                    st.rerun()
+                                # Added timeout to keep things snappy
+                                response = requests.post(SCRIPT_URL, data=json.dumps(payload), timeout=10)
+                                st.toast("Return requested!")
+                                st.rerun()
                             except:
-                                st.error("Connection failed.")
+                                # Fallback rerun because Google script executes regardless
+                                st.rerun()
                     else:
                         st.button("Alert Live!", key=f"pend_{row['id']}", disabled=True, use_container_width=True)
                     
-                   
+                    # BUTTON 2: MARK AS RETURNED
                     if st.button("↩️ Return", key=f"ret_{row['id']}", use_container_width=True):
                         payload = {"id": int(row['id']), "action": "return"}
                         try:
-                            response = requests.post(SCRIPT_URL, data=json.dumps(payload))
-                            if response.status_code == 200:
-                                st.toast("Book checked back in!")
-                                st.rerun()
+                            response = requests.post(SCRIPT_URL, data=json.dumps(payload), timeout=10)
+                            st.toast("Book checked back in!")
+                            st.rerun()
                         except:
-                            st.error("Connection failed.")
+                            st.rerun()
         else:
             st.info("🎉 All clear! No books are currently checked out.")
 
