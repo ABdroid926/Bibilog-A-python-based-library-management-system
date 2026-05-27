@@ -1,9 +1,18 @@
+import os
+import subprocess
+import sys
+
+try:
+    from streamlit_gsheets import GSheetsConnection
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "git+https://github.com/streamlit/gsheets-connection"])
+    from streamlit_gsheets import GSheetsConnection
+
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 
 
-st.set_page_config(page_title="Library Portal", page_icon="📚", layout="centered")
+st.set_page_config(page_title="BibiLog Library Portal", page_icon="📚", layout="centered")
 
 st.title("📚 CBibilog Portal")
 
