@@ -91,7 +91,7 @@ else:
         
         my_books = df[df["borrowed_by"].astype(str).str.lower() == current_user]
         
-       if not my_books.empty:
+if not my_books.empty:
             for index, row in my_books.iterrows():
                 if row["status"] == "Return Requested":
                     st.error(f"⚠️ **⚠️ IMMEDIATE RETURN REQUESTED ⚠️**\n\nThe administration has flagged **{row['title']}** for return. Please hand it in.")
