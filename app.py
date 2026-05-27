@@ -1,22 +1,24 @@
 import streamlit as st
 import pandas as pd
+import requests
+import json
 
 st.set_page_config(page_title="Bibilog", page_icon="📚", layout="centered")
 st.title("📚 Bibilog Library Portal")
 
 
-SHEET_URL = "https://docs.google.com/spreadsheets/d/1DdQ9Kf5tu02ztBdvtETPukqLTEMwd6C-24-CinsZZFU/edit?usp=sharing"
-
 try:
-   
+    SHEET_URL = st.secrets["sheet_url"]
+    SCRIPT_URL = st.secrets["script_url"]
+    
     sheet_id = SHEET_URL.split("/d/")[1].split("/")[0]
     csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
     df = pd.read_csv(csv_url)
 except Exception as e:
-    st.error("Could not load database. Make sure your Google Sheet link is correct and set to 'Anyone with the link can view'.")
+    st.error("Security/Database configuration error. Check your Streamlit Secrets Dashboard.")
     st.stop()
 
-
+# Initialize session states
 if "user_role" not in st.session_state:
     st.session_state.user_role = None
 if "username" not in st.session_state:
@@ -24,7 +26,7 @@ if "username" not in st.session_state:
 
 # --- LOGIN INTERFACE ---
 if st.session_state.user_role is None:
-    st.subheader("Login")
+    st.subheader("🔑 Login")
     
     username_input = st.text_input("Username").lower().strip()
     password_input = st.text_input("Password", type="password")
@@ -39,7 +41,7 @@ if st.session_state.user_role is None:
             st.session_state.username = username_input
             st.rerun()
         else:
-            st.error("Invalid credentials. Try 'admin'/'admin123' or a name from your spreadsheet.")
+            st.error("Invalid credentials.")
 
 # --- LOGGED IN PORTALS ---
 else:
@@ -76,7 +78,17 @@ else:
                 with col3:
                     if status != "Return Requested":
                         if st.button("🚨 Request Return", key=f"req_{row['id']}", use_container_width=True):
-                            st.warning(f"To update permanently: Change the status column for '{row['title']}' to 'Return Requested' directly inside your Google Sheet!")
+                          
+                            payload = {"id": int(row['id']), "status": "Return Requested"}
+                            try:
+                                response = requests.post(SCRIPT_URL, data=json.dumps(payload))
+                                if response.status_code == 200:
+                                    st.success("Notification updated live on Sheet!")
+                                    st.rerun()
+                                else:
+                                    st.error("Failed to sync with Sheet backend.")
+                            except Exception as e:
+                                st.error("Connection error.")
                     else:
                         st.button("Alert Live!", key=f"pend_{row['id']}", disabled=True, use_container_width=True)
         else:
