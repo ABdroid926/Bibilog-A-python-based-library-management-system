@@ -14,14 +14,16 @@ try:
     
     sheet_id = SHEET_URL.split("/d/")[1].split("/")[0]
     
+  
     csv_url_books = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid=0"
     df = pd.read_csv(csv_url_books)
+    
     
     csv_url_users = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet=users"
     df_users = pd.read_csv(csv_url_users)
     df_users['username'] = df_users['username'].astype(str).str.lower().str.strip()
 except Exception as e:
-    st.error("Database connection configuration error. ")
+    st.error("Database connection configuration error. Verify your Google Sheet tabs and Secrets.")
     st.stop()
 
 
@@ -30,13 +32,13 @@ if "user_role" not in st.session_state:
 if "username" not in st.session_state:
     st.session_state.username = None
 
-#  (LOGIN / SIGN UP) 
+
 if st.session_state.user_role is None:
     menu_tab = st.radio("Choose Action", ["Login", "Sign Up"], horizontal=True, label_visibility="collapsed")
     st.markdown("---")
 
-    if menu_tab == "Existing Member Login":
-        st.subheader("🔑 Login")
+    if menu_tab == "Login":
+        st.subheader("🔑 Login!")
         username_input = st.text_input("Username").lower().strip()
         password_input = st.text_input("Password", type="password")
         
@@ -54,7 +56,7 @@ if st.session_state.user_role is None:
                 else:
                     st.error("Incorrect password.")
             else:
-                st.error("Username not found. Please sign up!")
+                st.error("Username not found. Please sign up below!")
 
     else:
         st.subheader("📝 Sign Up!")
@@ -78,11 +80,11 @@ if st.session_state.user_role is None:
                     if "User Exists" in response.text:
                         st.error("That username is already taken!")
                     else:
-                        st.success("Account created successfully! Click 'Login' to sign in!.")
+                        st.success("Account created successfully! Click 'Existing Member Login' to sign in.")
                 except:
                     st.error("Registration failed. Try again.")
 
-# --- LOGGED IN PORTALS ---
+
 else:
     st.sidebar.write(f"Logged in as: **{st.session_state.username.capitalize()}**")
     if st.sidebar.button("Log Out", use_container_width=True):
@@ -90,18 +92,17 @@ else:
         st.session_state.username = None
         st.rerun()
 
-    # --- ADMIN VIEW ---
+   
     if st.session_state.user_role == "admin":
         st.space("large")
         st.header("🛡️ Admin Dashboard")
         
-        
+       
         st.subheader("📥 Issue & Checkout Desk")
         
-     
         book_id_input = st.text_input("Enter Numeric Book ID Only")
         
-      
+       
         book_is_valid = False
         target_row = None
         
@@ -109,7 +110,7 @@ else:
             if not book_id_input.isdigit():
                 st.error("❌ Invalid input. Please enter numbers only.")
             else:
-                
+               
                 matched_book = df[df["id"].astype(str) == book_id_input]
                 
                 if matched_book.empty:
@@ -125,10 +126,10 @@ else:
                         st.success(f"📖 **Book Found:** '{book_title}' — ✅ Available for Loan")
                         book_is_valid = True
                         
-       
+        
         with st.form("checkout_form", clear_on_submit=True):
-            borrower_name = st.text_input("Student Username ").lower().strip()
-            loan_days = st.number_input("Loan Period (Days)", min_value=1, max_value=90, value=14, step=1)
+            borrower_name = st.text_input("Student Username").lower().strip()
+            loan_days = st.number_input("Loan Period (Days)", min_value=1, max_value=90, value=7, step=1)
             submit_checkout = st.form_submit_button("🚀 Issue Book", use_container_width=True)
             
             if submit_checkout:
@@ -153,7 +154,7 @@ else:
             
         st.markdown("---")
 
-   
+      
         st.subheader("📋 Active Loans & Statuses")
         borrowed_books = df[df["borrowed_by"].notna() & (df["borrowed_by"].astype(str).str.strip() != "") & (df["status"] != "Available")]
         
@@ -195,7 +196,7 @@ else:
         else:
             st.info("🎉 All clear! No books are currently checked out.")
 
-
+   
     elif st.session_state.user_role == "user":
         current_user = st.session_state.username
         st.header(f"👋 Welcome back, {current_user.capitalize()}!")
@@ -206,8 +207,8 @@ else:
         if not my_books.empty:
             for index, row in my_books.iterrows():
                 if row["status"] == "Return Requested":
-                    st.error(f"⚠️ **⚠️ IMMEDIATE RETURN REQUESTED ⚠️**\n\nThe Librarian has flagged **{row['title']}** for return. Please hand it in.")
+                    st.error(f"⚠️ **⚠️ IMMEDIATE RETURN REQUESTED ⚠️**\n\nThe librarian has flagged **{row['title']}** for return. Please hand it in.")
                 else:
                     st.info(f"📖 **{row['title']}**\n\n* **Status:** {row['status']}\n* **Due Back:** {row['due_date']}")
         else:
-            st.success("You aren't holding onto any books right now! Why not check out the library?. 🎉")
+            st.success("You aren't holding onto any books right now! Why not check out the library? 🎉")
