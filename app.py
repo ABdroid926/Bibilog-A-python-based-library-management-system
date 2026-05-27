@@ -34,16 +34,25 @@ if st.session_state.user_role is None:
     password_input = st.text_input("Password", type="password")
     
     if st.button("Log In", use_container_width=True):
+        # 1. Admin Login
         if username_input == "admin" and password_input == "admin123":
             st.session_state.user_role = "admin"
             st.session_state.username = "admin"
             st.rerun()
+            
+        # 2. Permanent Student Accounts (Alice & Bob)
+        elif username_input in ["alice", "bob"] and password_input == "password":
+            st.session_state.user_role = "user"
+            st.session_state.username = username_input
+            st.rerun()
+            
+        # 3. Dynamic Fallback (In case you have other names in your sheet)
         elif username_input in df['borrowed_by'].dropna().astype(str).str.lower().unique() and password_input == "password":
             st.session_state.user_role = "user"
             st.session_state.username = username_input
             st.rerun()
         else:
-            st.error("Invalid credentials.")
+            st.error("Invalid credentials. Use 'admin', 'alice', or 'bob'.")
 
 # --- LOGGED IN PORTALS ---
 else:
@@ -58,7 +67,7 @@ else:
         st.header("🛡️ Admin Dashboard")
         st.subheader("Current Book Loans & Statuses")
         
-        # Filter: Exclude rows where borrowed_by is empty, null, or status is Available
+        # Exclude rows where borrowed_by is empty or status is Available
         borrowed_books = df[df["borrowed_by"].notna() & (df["borrowed_by"].astype(str).str.strip() != "") & (df["status"] != "Available")]
         
         if not borrowed_books.empty:
@@ -84,12 +93,10 @@ else:
                         if st.button("🚨 Request", key=f"req_{row['id']}", use_container_width=True):
                             payload = {"id": int(row['id']), "action": "request"}
                             try:
-                                # Added timeout to keep things snappy
                                 response = requests.post(SCRIPT_URL, data=json.dumps(payload), timeout=10)
                                 st.toast("Return requested!")
                                 st.rerun()
                             except:
-                                # Fallback rerun because Google script executes regardless
                                 st.rerun()
                     else:
                         st.button("Alert Live!", key=f"pend_{row['id']}", disabled=True, use_container_width=True)
@@ -121,4 +128,4 @@ else:
                 else:
                     st.info(f"📖 **{row['title']}**\n\n* **Status:** {row['status']}\n* **Due Back:** {row['due_date']}")
         else:
-            st.success("You aren't holding onto any books right now!")
+            st.success("You aren't holding onto any books right now! Enjoy your free time. 🎉")
