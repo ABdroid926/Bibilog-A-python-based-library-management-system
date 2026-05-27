@@ -20,8 +20,7 @@ try:
     csv_url_books = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid=0"
     df = pd.read_csv(csv_url_books)
     
-    # Fetch Users data (Specific tab using sheet_name or default fallback)
-    # To target the 'users' tab cleanly over public CSV web links:
+    # Fetch Users data (Specific tab using sheet_name)
     csv_url_users = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet=users"
     df_users = pd.read_csv(csv_url_users)
     df_users['username'] = df_users['username'].astype(str).str.lower().str.strip()
@@ -37,7 +36,6 @@ if "username" not in st.session_state:
 
 # --- PORTAL ENTRY VIEW (LOGIN / SIGN UP) ---
 if st.session_state.user_role is None:
-    # Use a tab selector to switch interfaces smoothly
     menu_tab = st.radio("Choose Action", ["Existing Member Login", "Create New Account (Sign Up)"], horizontal=True, label_visibility="collapsed")
     st.markdown("---")
 
@@ -47,13 +45,10 @@ if st.session_state.user_role is None:
         password_input = st.text_input("Password", type="password")
         
         if st.button("Log In", use_container_width=True):
-            # 1. Hardcoded Admin Access
-            if username_input == st.secrets["admin"] and password_input == st.secrets["admin_pass"]:
+            if username_input == "admin" and password_input == "admin123":
                 st.session_state.user_role = "admin"
                 st.session_state.username = "admin"
                 st.rerun()
-            
-            # 2. Dynamic Database User Access
             elif username_input in df_users['username'].values:
                 correct_password = str(df_users[df_users['username'] == username_input].iloc[0]['password']).strip()
                 if str(password_input).strip() == correct_password:
@@ -81,7 +76,6 @@ if st.session_state.user_role is None:
             elif new_pass != confirm_pass:
                 st.error("Passwords do not match.")
             else:
-                # Payload to write user details to Google Sheet
                 payload = {"action": "register", "username": new_user, "password": new_pass}
                 try:
                     response = requests.post(SCRIPT_URL, data=json.dumps(payload), timeout=10)
@@ -95,7 +89,7 @@ if st.session_state.user_role is None:
 # --- LOGGED IN PORTALS ---
 else:
     st.sidebar.write(f"Logged in as: **{st.session_state.username.capitalize()}**")
-    if st.sidebar.button("Log Out", use_container_width=True):
+    if st.sidebar.button("🚪 Log Out", use_container_width=True):
         st.session_state.user_role = None
         st.session_state.username = None
         st.rerun()
@@ -104,43 +98,61 @@ else:
     if st.session_state.user_role == "admin":
         st.header("🛡️ Admin Dashboard")
         
-        # --- FEATURE: CHECKOUT FORM WITH TEXT ENTRY ---
+        # --- FEATURE: CHECKOUT DESK (ONLY ACCEPTS IDS) ---
         st.subheader("📥 Issue & Checkout Desk")
+        
+        # 1. Input box restricts entry entirely to numbers
+        book_id_input = st.text_input("Enter Numeric Book ID Only")
+        
+        # Dynamic Book Verification Preview
+        book_is_valid = False
+        target_row = None
+        
+        if book_id_input:
+            if not book_id_input.isdigit():
+                st.error("❌ Invalid input. Please enter numbers only.")
+            else:
+                # Find the book matching the ID
+                matched_book = df[df["id"].astype(str) == book_id_input]
+                
+                if matched_book.empty:
+                    st.warning("🔍 Looking for ID... (No book matches this ID number yet)")
+                else:
+                    target_row = matched_book.iloc[0]
+                    book_title = target_row["title"]
+                    book_status = target_row["status"]
+                    
+                    if book_status != "Available":
+                        st.error(f"📖 **Book Found:** '{book_title}' — ❌ Currently checked out to {str(target_row['borrowed_by']).capitalize()}")
+                    else:
+                        st.success(f"📖 **Book Found:** '{book_title}' — ✅ Available for Loan")
+                        book_is_valid = True
+                        
+        # 2. Main Checkout Form (Only processing if the book preview above is green/valid)
         with st.form("checkout_form", clear_on_submit=True):
-            book_search = st.text_input("Enter Book ID or Title").strip()
             borrower_name = st.text_input("Student Username (e.g., alice, bob)").lower().strip()
             loan_days = st.number_input("Loan Period (Days)", min_value=1, max_value=90, value=14, step=1)
             submit_checkout = st.form_submit_button("🚀 Issue Book", use_container_width=True)
             
             if submit_checkout:
-                if not book_search or not borrower_name:
-                    st.error("Please fill out all search fields.")
+                if not book_id_input or not borrower_name:
+                    st.error("Please fill out both the Book ID and Student Username fields.")
+                elif not book_is_valid:
+                    st.error("Cannot issue book. Ensure the ID matches an 'Available' library item.")
                 else:
-                    matched_book = pd.DataFrame()
-                    if book_search.isdigit():
-                        matched_book = df[df["id"].astype(str) == book_search]
-                    else:
-                        matched_book = df[df["title"].astype(str).str.lower().str.contains(book_search.lower())]
-                    
-                    if matched_book.empty:
-                        st.error(f"Could not find any book matching '{book_search}'.")
-                    elif matched_book.iloc[0]["status"] != "Available":
-                        st.error(f"❌ '{matched_book.iloc[0]['title']}' is checked out!")
-                    else:
-                        target_row = matched_book.iloc[0]
-                        calculated_due_date = datetime.now() + timedelta(days=int(loan_days))
-                        payload = {
-                            "id": int(target_row["id"]),
-                            "action": "checkout",
-                            "borrowed_by": borrower_name,
-                            "due_date": calculated_due_date.strftime("%Y-%m-%d")
-                        }
-                        try:
-                            response = requests.post(SCRIPT_URL, data=json.dumps(payload), timeout=10)
-                            st.toast(f"Checked out '{target_row['title']}'!")
-                            st.rerun()
-                        except:
-                            st.rerun()
+                    calculated_due_date = datetime.now() + timedelta(days=int(loan_days))
+                    payload = {
+                        "id": int(target_row["id"]),
+                        "action": "checkout",
+                        "borrowed_by": borrower_name,
+                        "due_date": calculated_due_date.strftime("%Y-%m-%d")
+                    }
+                    try:
+                        response = requests.post(SCRIPT_URL, data=json.dumps(payload), timeout=10)
+                        st.toast(f"Checked out '{target_row['title']}' successfully!")
+                        st.rerun()
+                    except:
+                        st.rerun()
             
         st.markdown("---")
 
