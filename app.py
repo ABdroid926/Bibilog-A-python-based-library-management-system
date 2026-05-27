@@ -23,7 +23,7 @@ try:
     df_users = pd.read_csv(csv_url_users)
     df_users['username'] = df_users['username'].astype(str).str.lower().str.strip()
 except Exception as e:
-    st.error("Database connection configuration error. Verify your Google Sheet tabs and Secrets.")
+    st.error("Database connection configuration error!")
     st.stop()
 
 
