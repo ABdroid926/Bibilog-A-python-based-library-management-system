@@ -67,8 +67,8 @@ if st.session_state.user_role is None:
         if st.button("Register Account", use_container_width=True):
             if not new_user or not new_pass:
                 st.error("Please fill in all blanks.")
-            elif new_user == "admin":
-                st.error("Username 'admin' is reserved.")
+            elif new_user == st.secrets["admin"]:
+                st.error("Username is reserved.")
             elif " " in new_user:
                 st.error("Usernames cannot contain spaces.")
             elif new_pass != confirm_pass:
