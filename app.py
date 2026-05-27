@@ -1,8 +1,6 @@
 import streamlit as st
 import datetime
 
-# 1. Mock Database (In real life, this would load from a CSV or Database)
-# In Streamlit, we use st.session_state so data doesn't wipe on every click
 if "books" not in st.session_state:
     st.session_state.books = [
         {"id": 1, "title": "The Hobbit", "borrowed_by": "alice", "due_date": datetime.date(2026, 6, 1), "status": "On Time"},
@@ -12,7 +10,7 @@ if "books" not in st.session_state:
 
 st.title("📚 Bibilog Library Portal")
 
-# 2. Simple Login System
+#LOGIN
 if "user_role" not in st.session_state:
     st.session_state.user_role = None
     st.session_state.username = None
@@ -33,14 +31,14 @@ if st.session_state.user_role is None:
         else:
             st.error("Invalid credentials")
 
-# 3. Logged In Views
+
 else:
     if st.sidebar.button("Log Out"):
         st.session_state.user_role = None
         st.session_state.username = None
         st.rerun()
 
-    # --- ADMIN VIEW ---
+    # ADMIN 
     if st.session_state.user_role == "admin":
         st.header("Admin Dashboard")
         st.subheader("All Lent Books")
@@ -53,7 +51,7 @@ else:
                 if col3.button("Request Return", key=book["id"]):
                     st.info(f"Return request sent to {book['borrowed_by']} for '{book['title']}'!")
 
-    # --- USER VIEW ---
+    # USER 
     elif st.session_state.user_role == "user":
         st.header(f"Welcome back, {st.session_state.username.capitalize()}!")
         st.subheader("Your Borrowed Books")
