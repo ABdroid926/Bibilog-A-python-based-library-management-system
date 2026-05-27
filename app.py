@@ -32,7 +32,7 @@ if "username" not in st.session_state:
 
 #  (LOGIN / SIGN UP) 
 if st.session_state.user_role is None:
-    menu_tab = st.radio("Choose Action", ["Existing Member Login", "Create New Account (Sign Up)"], horizontal=True, label_visibility="collapsed")
+    menu_tab = st.radio("Choose Action", ["Login", "Sign Up"], horizontal=True, label_visibility="collapsed")
     st.markdown("---")
 
     if menu_tab == "Existing Member Login":
@@ -41,7 +41,7 @@ if st.session_state.user_role is None:
         password_input = st.text_input("Password", type="password")
         
         if st.button("Log In", use_container_width=True):
-            if username_input == "admin" and password_input == "admin123":
+            if username_input == st.secrets["admin"]and password_input == st.secrets["admin_pass"]:
                 st.session_state.user_role = "admin"
                 st.session_state.username = "admin"
                 st.rerun()
@@ -54,10 +54,10 @@ if st.session_state.user_role is None:
                 else:
                     st.error("Incorrect password.")
             else:
-                st.error("Username not found. Please sign up below!")
+                st.error("Username not found. Please sign up!")
 
     else:
-        st.subheader("📝 Member Registration")
+        st.subheader("📝 Sign Up!")
         new_user = st.text_input("Choose Username").lower().strip()
         new_pass = st.text_input("Choose Password", type="password")
         confirm_pass = st.text_input("Confirm Password", type="password")
@@ -78,29 +78,30 @@ if st.session_state.user_role is None:
                     if "User Exists" in response.text:
                         st.error("That username is already taken!")
                     else:
-                        st.success("Account created successfully! Click 'Existing Member Login' to sign in.")
+                        st.success("Account created successfully! Click 'Login' to sign in!.")
                 except:
                     st.error("Registration failed. Try again.")
 
 # --- LOGGED IN PORTALS ---
 else:
     st.sidebar.write(f"Logged in as: **{st.session_state.username.capitalize()}**")
-    if st.sidebar.button("🚪 Log Out", use_container_width=True):
+    if st.sidebar.button("Log Out", use_container_width=True):
         st.session_state.user_role = None
         st.session_state.username = None
         st.rerun()
 
     # --- ADMIN VIEW ---
     if st.session_state.user_role == "admin":
+        st.space("large")
         st.header("🛡️ Admin Dashboard")
         
-        # --- FEATURE: CHECKOUT DESK (ONLY ACCEPTS IDS) ---
+        
         st.subheader("📥 Issue & Checkout Desk")
         
-        # 1. Input box restricts entry entirely to numbers
+     
         book_id_input = st.text_input("Enter Numeric Book ID Only")
         
-        # Dynamic Book Verification Preview
+      
         book_is_valid = False
         target_row = None
         
@@ -108,11 +109,11 @@ else:
             if not book_id_input.isdigit():
                 st.error("❌ Invalid input. Please enter numbers only.")
             else:
-                # Find the book matching the ID
+                
                 matched_book = df[df["id"].astype(str) == book_id_input]
                 
                 if matched_book.empty:
-                    st.warning("🔍 Looking for ID... (No book matches this ID number yet)")
+                    st.warning("🔍 No book matches this ID number yet!")
                 else:
                     target_row = matched_book.iloc[0]
                     book_title = target_row["title"]
@@ -124,9 +125,9 @@ else:
                         st.success(f"📖 **Book Found:** '{book_title}' — ✅ Available for Loan")
                         book_is_valid = True
                         
-        # 2. Main Checkout Form (Only processing if the book preview above is green/valid)
+       
         with st.form("checkout_form", clear_on_submit=True):
-            borrower_name = st.text_input("Student Username (e.g., alice, bob)").lower().strip()
+            borrower_name = st.text_input("Student Username ").lower().strip()
             loan_days = st.number_input("Loan Period (Days)", min_value=1, max_value=90, value=14, step=1)
             submit_checkout = st.form_submit_button("🚀 Issue Book", use_container_width=True)
             
@@ -152,7 +153,7 @@ else:
             
         st.markdown("---")
 
-        # --- ACTIVE LOANS TRACKER ---
+   
         st.subheader("📋 Active Loans & Statuses")
         borrowed_books = df[df["borrowed_by"].notna() & (df["borrowed_by"].astype(str).str.strip() != "") & (df["status"] != "Available")]
         
@@ -194,7 +195,7 @@ else:
         else:
             st.info("🎉 All clear! No books are currently checked out.")
 
-    # --- USER VIEW ---
+
     elif st.session_state.user_role == "user":
         current_user = st.session_state.username
         st.header(f"👋 Welcome back, {current_user.capitalize()}!")
@@ -205,8 +206,8 @@ else:
         if not my_books.empty:
             for index, row in my_books.iterrows():
                 if row["status"] == "Return Requested":
-                    st.error(f"⚠️ **⚠️ IMMEDIATE RETURN REQUESTED ⚠️**\n\nThe administration has flagged **{row['title']}** for return. Please hand it in.")
+                    st.error(f"⚠️ **⚠️ IMMEDIATE RETURN REQUESTED ⚠️**\n\nThe Librarian has flagged **{row['title']}** for return. Please hand it in.")
                 else:
                     st.info(f"📖 **{row['title']}**\n\n* **Status:** {row['status']}\n* **Due Back:** {row['due_date']}")
         else:
-            st.success("You aren't holding onto any books right now! Enjoy your free time. 🎉")
+            st.success("You aren't holding onto any books right now! Why not check out the library?. 🎉")
