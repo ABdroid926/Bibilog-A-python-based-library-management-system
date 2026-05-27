@@ -4,43 +4,39 @@ import requests
 import json
 from datetime import datetime, timedelta
 
-st.set_page_config(page_title="Library Portal", page_icon="📚", layout="centered")
-st.title("📚 Community Library Portal")
+st.set_page_config(page_title="Bibilog", page_icon="📚", layout="centered")
+st.title("📚 Bibilog Library Portal")
 
-# =====================================================================
-# 1. SECURE DATA FETCHING (BOOKS & USERS)
-# =====================================================================
+
 try:
     SHEET_URL = st.secrets["sheet_url"]
     SCRIPT_URL = st.secrets["script_url"]
     
     sheet_id = SHEET_URL.split("/d/")[1].split("/")[0]
     
-    # Fetch Books data (First Tab)
     csv_url_books = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid=0"
     df = pd.read_csv(csv_url_books)
     
-    # Fetch Users data (Specific tab using sheet_name)
     csv_url_users = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet=users"
     df_users = pd.read_csv(csv_url_users)
     df_users['username'] = df_users['username'].astype(str).str.lower().str.strip()
 except Exception as e:
-    st.error("Database connection configuration error. Verify your Google Sheet tabs and Secrets.")
+    st.error("Database connection configuration error. ")
     st.stop()
 
-# Initialize session states
+
 if "user_role" not in st.session_state:
     st.session_state.user_role = None
 if "username" not in st.session_state:
     st.session_state.username = None
 
-# --- PORTAL ENTRY VIEW (LOGIN / SIGN UP) ---
+#  (LOGIN / SIGN UP) 
 if st.session_state.user_role is None:
     menu_tab = st.radio("Choose Action", ["Existing Member Login", "Create New Account (Sign Up)"], horizontal=True, label_visibility="collapsed")
     st.markdown("---")
 
     if menu_tab == "Existing Member Login":
-        st.subheader("🔑 Member & Admin Login")
+        st.subheader("🔑 Login")
         username_input = st.text_input("Username").lower().strip()
         password_input = st.text_input("Password", type="password")
         
