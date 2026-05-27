@@ -24,7 +24,7 @@ if "username" not in st.session_state:
 
 # --- LOGIN INTERFACE ---
 if st.session_state.user_role is None:
-    st.subheader("🔑 Member & Admin Login")
+    st.subheader("Login")
     
     username_input = st.text_input("Username").lower().strip()
     password_input = st.text_input("Password", type="password")
