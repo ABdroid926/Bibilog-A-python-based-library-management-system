@@ -97,6 +97,6 @@ if not my_books.empty:
                     st.error(f"⚠️ **⚠️ IMMEDIATE RETURN REQUESTED ⚠️**\n\nThe administration has flagged **{row['title']}** for return. Please hand it in.")
                 else:
                     st.info(f"📖 **{row['title']}**\n\n* **Status:** {row['status']}\n* **Due Back:** {row['due_date']}")
-        else:
+     else:
             st.success("You aren't holding onto any books right now!")
         
