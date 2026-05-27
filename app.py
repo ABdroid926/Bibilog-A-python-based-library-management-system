@@ -3,10 +3,12 @@ import pandas as pd
 import requests
 import json
 
-st.set_page_config(page_title="Bibilog", page_icon="📚", layout="centered")
-st.title("📚 Bibilog Library Portal")
+st.set_page_config(page_title="Library Portal", page_icon="📚", layout="centered")
+st.title("📚 Community Library Portal")
 
-
+# =====================================================================
+# 1. SECURE DATA FETCHING
+# =====================================================================
 try:
     SHEET_URL = st.secrets["sheet_url"]
     SCRIPT_URL = st.secrets["script_url"]
@@ -26,7 +28,7 @@ if "username" not in st.session_state:
 
 # --- LOGIN INTERFACE ---
 if st.session_state.user_role is None:
-    st.subheader("🔑 Login")
+    st.subheader("🔑 Member & Admin Login")
     
     username_input = st.text_input("Username").lower().strip()
     password_input = st.text_input("Password", type="password")
@@ -78,17 +80,17 @@ else:
                 with col3:
                     if status != "Return Requested":
                         if st.button("🚨 Request Return", key=f"req_{row['id']}", use_container_width=True):
-                          
                             payload = {"id": int(row['id']), "status": "Return Requested"}
                             try:
+                                # Send update to Google Apps Script
                                 response = requests.post(SCRIPT_URL, data=json.dumps(payload))
                                 if response.status_code == 200:
-                                    st.success("Notification updated live on Sheet!")
+                                    st.toast("Notification updated live!")
                                     st.rerun()
                                 else:
-                                    st.error("Failed to sync with Sheet backend.")
+                                    st.error("Sheet rejected the update.")
                             except Exception as e:
-                                st.error("Connection error.")
+                                st.error("Connection failed.")
                     else:
                         st.button("Alert Live!", key=f"pend_{row['id']}", disabled=True, use_container_width=True)
         else:
