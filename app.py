@@ -20,8 +20,8 @@ try:
     
     
     csv_url_users = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet=users"
-    df_users = pd.read_csv(csv_url_users)
-    df_users['username'] = df_users['username'].astype(str).str.lower().str.strip()
+    dfusers = pd.read_csv(csv_url_users)
+    dfusers['username'] = dfusers['username'].astype(str).str.lower().str.strip()
 except Exception as e:
     st.error("Database connection configuration error!")
     st.stop()
@@ -47,8 +47,8 @@ if st.session_state.user_role is None:
                 st.session_state.user_role = "admin"
                 st.session_state.username = "admin"
                 st.rerun()
-            elif username_input in df_users['username'].values:
-                correct_password = str(df_users[df_users['username'] == username_input].iloc[0]['password']).strip()
+            elif username_input in dfusers['username'].values:
+                correct_password = str(dfusers[dfusers['username'] == username_input].iloc[0]['password']).strip()
                 if str(password_input).strip() == correct_password:
                     st.session_state.user_role = "user"
                     st.session_state.username = username_input
