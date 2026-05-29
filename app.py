@@ -73,7 +73,7 @@ if st.session_state.user_role is None:
                 st.error("Usernames cannot contain spaces!")
             elif new_pass != confirm_pass:
                 st.error("Your Passwords do not match!")
-            elif not(any(char.isalpha() for in confirm_pass)): 
+            elif not any(char.isalpha() for in confirm_pass) : 
                 st.error("Your Password must contain atleast one letter!")
              
             else:
