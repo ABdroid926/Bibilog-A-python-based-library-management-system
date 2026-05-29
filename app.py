@@ -68,13 +68,14 @@ if st.session_state.user_role is None:
             if not new_user or not new_pass:
                 st.error("Please fill in all blanks.")
             elif new_user == st.secrets["admin"]:
-                st.error("Username is reserved.")
+                st.error("Username is reserved!")
             elif " " in new_user:
-                st.error("Usernames cannot contain spaces.")
+                st.error("Usernames cannot contain spaces!")
             elif new_pass != confirm_pass:
-                st.error("Passwords do not match.")
-            elif confirm_pass.isalpha() == "False":
-                st.error("Please use only alphabets in your password!")
+                st.error("Your Passwords do not match!")
+            elif not(any(char.isalpha() for in confirm_pass)): 
+                st.error("Your Password must contain atleast one letter!")
+             
             else:
                 payload = {"action": "register", "username": new_user, "password": new_pass}
                 try:
