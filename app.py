@@ -56,13 +56,13 @@ if st.session_state.user_role is None:
                 else:
                     st.error("Incorrect password.")
             else:
-                st.error("Username not found. Please sign up below!")
+                st.error("Username not found. Please do sign up !")
 
     else:
         st.subheader("📝 Sign Up!")
-        new_user = st.text_input("Choose Username").lower().strip()
-        new_pass = st.text_input("Choose Password", type="password")
-        confirm_pass = st.text_input("Confirm Password", type="password")
+        new_user = st.text_input("Choose Your Username").lower().strip()
+        new_pass = st.text_input("Choose Your Password", type="password")
+        confirm_pass = st.text_input("Confirm Your Password Please!", type="password")
         
         if st.button("Register Account", use_container_width=True):
             if not new_user or not new_pass:
@@ -81,7 +81,7 @@ if st.session_state.user_role is None:
                 try:
                     response = requests.post(SCRIPTURL, data=json.dumps(payload), timeout=10)
                     if "User Exists" in response.text:
-                        st.error("That username is already taken!")
+                        st.error("That username is already taken! Please pick another one!")
                     else:
                         st.success("Account created successfully! Click 'Existing Member Login' to sign in.")
                 except:
@@ -98,12 +98,12 @@ else:
    
     if st.session_state.user_role == "admin":
         st.space("large")
-        st.header("🛡️ Admin Dashboard")
+        st.header("Admin Dashboard 🛡️")
         
        
-        st.subheader("📥 Issue & Checkout Desk")
+        st.subheader("Issue & Checkout Desk 📥 ")
         
-        book_id_input = st.text_input("Enter Numeric Book ID Only")
+        book_id_input = st.text_input("Enter Book ID")
         
        
         book_is_valid = False
@@ -137,9 +137,9 @@ else:
             
             if submit_checkout:
                 if not book_id_input or not borrower_name:
-                    st.error("Please fill out both the Book ID and Student Username fields.")
+                    st.error("Please fill out all the fields!")
                 elif not book_is_valid:
-                    st.error("Cannot issue book. Ensure the ID matches an 'Available' library item.")
+                    st.error("Please issue an available library item!")
                 else:
                     calculated_due_date = datetime.now() + timedelta(days=int(loan_days))
                     payload = {
@@ -191,19 +191,20 @@ else:
                         payload = {"id": int(row['id']), "action": "return"}
                         try:
                             response = requests.post(SCRIPTURL, data=json.dumps(payload), timeout=10)
-                            st.toast("Book checked back in!")
+                            st.toast("Book checked in!!")
                             st.rerun()
                         except:
                             st.rerun()
                 st.markdown("---")
         else:
-            st.info("🎉 All clear! No books are currently checked out.")
+            st.info("You're in the clear! No books currently checked out! ")
 
    
     elif st.session_state.user_role == "user":
         current_user = st.session_state.username
-        st.header(f"👋 Welcome back, {current_user.capitalize()}!")
-        st.subheader("Your Checked Out Material")
+        st.header(f"👋 Hello, {current_user.capitalize()}!")
+        st.space("large")
+        st.subheader("Your checked out books : ")
         
         my_books = df[df["borrowed_by"].astype(str).str.lower() == current_user]
         
