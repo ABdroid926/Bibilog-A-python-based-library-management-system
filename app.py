@@ -73,7 +73,7 @@ if st.session_state.user_role is None:
                 st.error("Usernames cannot contain spaces.")
             elif new_pass != confirm_pass:
                 st.error("Passwords do not match.")
-            elif new_pass.isalpha() == "False"
+            elif new_pass.isalpha() == "False":
                 st.error("Please use only alphabets in your password!")
             else:
                 payload = {"action": "register", "username": new_user, "password": new_pass}
