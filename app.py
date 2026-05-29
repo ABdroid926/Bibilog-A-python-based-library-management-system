@@ -9,10 +9,10 @@ st.title("📚 Bibilog Library Portal")
 
 
 try:
-    SHEET_URL = st.secrets["sheet_url"]
-    SCRIPT_URL = st.secrets["script_url"]
+    SHEETURL = st.secrets["sheet_url"]
+    SCRIPTURL = st.secrets["script_url"]
     
-    sheet_id = SHEET_URL.split("/d/")[1].split("/")[0]
+    sheet_id = SHEETURL.split("/d/")[1].split("/")[0]
     
   
     csv_url_books = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid=0"
@@ -79,7 +79,7 @@ if st.session_state.user_role is None:
             else:
                 payload = {"action": "register", "username": new_user, "password": new_pass}
                 try:
-                    response = requests.post(SCRIPT_URL, data=json.dumps(payload), timeout=10)
+                    response = requests.post(SCRIPTURL, data=json.dumps(payload), timeout=10)
                     if "User Exists" in response.text:
                         st.error("That username is already taken!")
                     else:
@@ -149,7 +149,7 @@ else:
                         "due_date": calculated_due_date.strftime("%Y-%m-%d")
                     }
                     try:
-                        response = requests.post(SCRIPT_URL, data=json.dumps(payload), timeout=10)
+                        response = requests.post(SCRIPTURL, data=json.dumps(payload), timeout=10)
                         st.toast(f"Checked out '{target_row['title']}' successfully!")
                         st.rerun()
                     except:
@@ -179,7 +179,7 @@ else:
                         if st.button("🚨 Request", key=f"req_{row['id']}", use_container_width=True):
                             payload = {"id": int(row['id']), "action": "request"}
                             try:
-                                response = requests.post(SCRIPT_URL, data=json.dumps(payload), timeout=10)
+                                response = requests.post(SCRIPTURL, data=json.dumps(payload), timeout=10)
                                 st.toast("Return requested!")
                                 st.rerun()
                             except:
@@ -190,7 +190,7 @@ else:
                     if st.button("↩️ Return", key=f"ret_{row['id']}", use_container_width=True):
                         payload = {"id": int(row['id']), "action": "return"}
                         try:
-                            response = requests.post(SCRIPT_URL, data=json.dumps(payload), timeout=10)
+                            response = requests.post(SCRIPTURL, data=json.dumps(payload), timeout=10)
                             st.toast("Book checked back in!")
                             st.rerun()
                         except:
